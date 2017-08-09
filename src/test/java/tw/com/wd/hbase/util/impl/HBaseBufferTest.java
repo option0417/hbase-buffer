@@ -14,10 +14,7 @@ import tw.com.wd.hbase.util.IHBaseBuffer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -30,13 +27,16 @@ import static org.junit.Assert.assertThat;
  * 1500 Worker do 1000 = 1500000 put and done in 12467 millitime
  */
 public class HBaseBufferTest {
+    private static final int THREAD_CORE_SIZE                   = Runtime.getRuntime().availableProcessors() << 1;
+    private static final int TASK_QUEUE_SIZE                    = (THREAD_CORE_SIZE << 3) + (THREAD_CORE_SIZE << 1);
+    private static ExecutorService hConnPool                    = null;
     private static final String HBASE_ENV_KEY_ZOOKEEPER_QUORUM  = "hbase.zookeeper.quorum";
     private static final String HBASE_ENV_ROOT_DIR              = "hbase.root.dir";
     private static final int WORKER_SIZE                        = 1000;
-    private static final int PUT_COUNT                                 = 100;
-    private static final TableName TBL1                                = TableName.valueOf("testBuffer1");
-    private static final TableName TBL2                                = TableName.valueOf("testBuffer2");
-    private static final TableName TBL3                                = TableName.valueOf("testBuffer3");
+    private static final int PUT_COUNT                          = 100;
+    private static final TableName TBL1                         = TableName.valueOf("testBuffer1");
+    private static final TableName TBL2                         = TableName.valueOf("testBuffer2");
+    private static final TableName TBL3                         = TableName.valueOf("testBuffer3");
 
     private static Configuration conf;
     private static Connection hConn;
@@ -47,10 +47,18 @@ public class HBaseBufferTest {
 
     @BeforeClass
     public static void setupClass() throws IOException {
+        hConnPool =
+                new ThreadPoolExecutor(
+                        THREAD_CORE_SIZE,
+                        THREAD_CORE_SIZE + (THREAD_CORE_SIZE >> 1),
+                        1l,
+                        TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<Runnable>(TASK_QUEUE_SIZE));
+
         conf = new Configuration();
         conf.set(HBASE_ENV_KEY_ZOOKEEPER_QUORUM, "nqmi11");
         conf.set(HBASE_ENV_ROOT_DIR, "hdfs://nqmi11:8020/hbase");
-        hConn = ConnectionFactory.createConnection(conf);
+        hConn = ConnectionFactory.createConnection(conf, hConnPool);
 
         Admin admin = hConn.getAdmin();
 
@@ -148,7 +156,7 @@ public class HBaseBufferTest {
             }
             hbaseBuffer.flush();
             long endtime = System.currentTimeMillis();
-            System.out.printf("%d Worker do %d put and done in %d millitime", WORKER_SIZE, PUT_COUNT, endtime - startime);
+            System.out.printf("%d Worker do %d put and done in %d millitime\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
 
             for (Future<Boolean> f : futureList) {
                 assertThat(f.get(), is(Boolean.TRUE));
