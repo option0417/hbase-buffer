@@ -17,17 +17,16 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public class HBaseBuffer implements IHBaseBuffer {
+    private static final ConcurrentMap<TableName, BlockingQueue<Row>> hbaseOPMap = new ConcurrentHashMap<TableName, BlockingQueue<Row>>();
     private Logger LOG = LoggerFactory.getLogger(HBaseBuffer.class.getName());
     private int DEFAULT_BUFFER_SIZE = 10000;
     private long OFFER_TIMEOUT      = 300l;
-    private ConcurrentMap<TableName, BlockingQueue<Row>> hbaseOPMap;
     private Connection hConn;
 
 
     public HBaseBuffer(Connection hConn) {
         super();
         this.hConn          = hConn;
-        this.hbaseOPMap     = new ConcurrentHashMap<TableName, BlockingQueue<Row>>();
     }
 
     public boolean put(Row hbaseOp, TableName tbl) {
@@ -78,6 +77,7 @@ public class HBaseBuffer implements IHBaseBuffer {
         Table tbl = this.hConn.getTable(tal);
 
         try {
+            LOG.debug("Flush {} rows", rowList.size());
             tbl.batch(rowList, new Object[rowList.size()]);
         } finally {
             tbl.close();
