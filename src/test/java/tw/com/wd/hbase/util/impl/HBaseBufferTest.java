@@ -4,19 +4,19 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.junit.*;
 import tw.com.wd.hbase.util.IHBaseBuffer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -137,8 +137,10 @@ public class HBaseBufferTest {
     }
 
     @Test
-    public void testPut() {
-        long startime = System.currentTimeMillis();
+    public void testPut() throws Exception {
+        Exception rtnException  = null;
+        long startime           = System.currentTimeMillis();
+
         try {
 
             for (int cnt = 0; cnt < WORKER_SIZE; cnt++) {
@@ -157,29 +159,39 @@ public class HBaseBufferTest {
             hbaseBuffer.flush();
             long endtime = System.currentTimeMillis();
             System.out.printf("%d Worker do %d put and done in %d millitime\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
-
-            for (Future<Boolean> f : futureList) {
-                assertThat(f.get(), is(Boolean.TRUE));
-            }
         } catch (Exception e) {
+            rtnException = e;
             e.printStackTrace();
         }
+
+        assertThat(rtnException, is(nullValue()));
+        for (Future<Boolean> f : futureList) {
+            assertThat(f.get(), is(Boolean.TRUE));
+        }
+        assertThat(checkRecordCount(TBL1, WORKER_SIZE * PUT_COUNT), is(Boolean.TRUE));
     }
 
 
 
     @Test
-    public void testPutMultiTable() {
-        long startime = System.currentTimeMillis();
-        try {
+    public void testPutMultiTable() throws Exception {
+        Exception rtnException  = null;
+        long startime           = System.currentTimeMillis();
+        int  tbl1Cnt            = 0;
+        int  tbl2Cnt            = 0;
+        int  tbl3Cnt            = 0;
 
+        try {
             for (int cnt = 0; cnt < WORKER_SIZE; cnt++) {
                 if (cnt % 3 == 0) {
                     futureList.add(workerPool.submit(new PutWorker(cnt, TBL1, hbaseBuffer, PUT_COUNT)));
+                    tbl1Cnt++;
                 } else if (cnt % 3 == 1) {
                     futureList.add(workerPool.submit(new PutWorker(cnt, TBL2, hbaseBuffer, PUT_COUNT)));
+                    tbl2Cnt++;
                 } else {
                     futureList.add(workerPool.submit(new PutWorker(cnt, TBL3, hbaseBuffer, PUT_COUNT)));
+                    tbl3Cnt++;
                 }
             }
 
@@ -195,12 +207,47 @@ public class HBaseBufferTest {
             hbaseBuffer.flush();
             long endtime = System.currentTimeMillis();
             System.out.printf("%d Worker do %d put and done in %d millitime\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
-
-            for (Future<Boolean> f : futureList) {
-                assertThat(f.get(), is(Boolean.TRUE));
-            }
         } catch (Exception e) {
+            rtnException = e;
             e.printStackTrace();
+        }
+
+
+
+        assertThat(rtnException, is(nullValue()));
+        for (Future<Boolean> f : futureList) {
+            assertThat(f.get(), is(Boolean.TRUE));
+        }
+
+        assertThat(checkRecordCount(TBL1, tbl1Cnt * PUT_COUNT), is(Boolean.TRUE));
+        assertThat(checkRecordCount(TBL2, tbl2Cnt * PUT_COUNT), is(Boolean.TRUE));
+        assertThat(checkRecordCount(TBL3, tbl3Cnt * PUT_COUNT), is(Boolean.TRUE));
+    }
+
+    private boolean checkRecordCount(TableName tbl, int exceptCount) throws IOException {
+        int currCount   = 0;
+        Table htbl      = null;
+
+        try {
+            htbl        = hConn.getTable(tbl);
+            Scan scan   = new Scan();
+
+            scan.setFilter(
+                    new FirstKeyOnlyFilter()
+            );
+            scan.setCaching(exceptCount / 10);
+
+            ResultScanner resultScanner = htbl.getScanner(scan);
+            Iterator<Result> iter       = resultScanner.iterator();
+            while (iter.hasNext()) {
+                iter.next();
+                currCount++;
+            }
+            return currCount == exceptCount;
+        } finally {
+            if (htbl != null) {
+                htbl.close();
+            }
         }
     }
 

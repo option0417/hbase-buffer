@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public class HBaseBuffer implements IHBaseBuffer {
-    private static final ConcurrentMap<TableName, BlockingQueue<Row>> hbaseOPMap = new ConcurrentHashMap<TableName, BlockingQueue<Row>>();
-    private Logger LOG = LoggerFactory.getLogger(HBaseBuffer.class.getName());
+    private static Logger LOG = LoggerFactory.getLogger(HBaseBuffer.class.getName());
+    private static final ConcurrentMap<TableName, BlockingQueue<Row>> HBASE_OP_MAP = new ConcurrentHashMap<TableName, BlockingQueue<Row>>();
     private int DEFAULT_BUFFER_SIZE = 10000;
     private long OFFER_TIMEOUT      = 300l;
     private Connection hConn;
@@ -31,16 +31,16 @@ public class HBaseBuffer implements IHBaseBuffer {
 
     public boolean put(Row hbaseOp, TableName tbl) {
         try {
-            if (this.hbaseOPMap.get(tbl) == null) {
-                synchronized (this) {
-                    if (this.hbaseOPMap.get(tbl) == null) {
-                        this.hbaseOPMap.put(tbl, new ArrayBlockingQueue<Row>(DEFAULT_BUFFER_SIZE));
+            if (this.HBASE_OP_MAP.get(tbl) == null) {
+                synchronized (this.HBASE_OP_MAP) {
+                    if (this.HBASE_OP_MAP.get(tbl) == null) {
+                        this.HBASE_OP_MAP.put(tbl, new ArrayBlockingQueue<Row>(DEFAULT_BUFFER_SIZE));
                     }
                 }
             }
 
-            while (!this.hbaseOPMap.get(tbl).offer(hbaseOp, OFFER_TIMEOUT, TimeUnit.MILLISECONDS)) {
-                this.flush();
+            while (!this.HBASE_OP_MAP.get(tbl).offer(hbaseOp, OFFER_TIMEOUT, TimeUnit.MILLISECONDS)) {
+                this.flush(false);
             }
             return true;
         } catch (Exception e) {
@@ -50,38 +50,53 @@ public class HBaseBuffer implements IHBaseBuffer {
     }
 
     public void flush() {
-        Iterator<Map.Entry<TableName, BlockingQueue<Row>>> iter = hbaseOPMap.entrySet().iterator();
+        flush(true);
+    }
+
+    protected void flush(boolean force) {
+        Iterator<Map.Entry<TableName, BlockingQueue<Row>>> iter = HBASE_OP_MAP.entrySet().iterator();
 
         while (iter.hasNext()) {
             Map.Entry<TableName, BlockingQueue<Row>> entry = iter.next();
 
-            if (entry.getValue().size() == DEFAULT_BUFFER_SIZE) {
-                synchronized (this) {
-                    if (entry.getValue().size() == DEFAULT_BUFFER_SIZE) {
-                        List<Row> rowList = new ArrayList<Row>(entry.getValue().size());
-                        entry.getValue().drainTo(rowList);
-
-                        try {
-                            flushToHBase(entry.getKey(), rowList);
-                        } catch (Exception e) {
-                            showException(e);
-                            throw new HBufferException(e);
+            if (!force) {
+                if (entry.getValue().size() < DEFAULT_BUFFER_SIZE) {
+                    synchronized (entry.getValue()) {
+                        if (entry.getValue().size() < DEFAULT_BUFFER_SIZE) {
+                            return;
                         }
                     }
                 }
+            }
+
+            List<Row> rowList = new ArrayList<Row>(entry.getValue().size());
+            entry.getValue().drainTo(rowList);
+
+            try {
+                flushToHBase(entry.getKey(), rowList);
+            } catch (Exception e) {
+                showException(e);
+                throw new HBufferException(e);
             }
         }
     }
 
     private void flushToHBase(TableName tal, List<Row> rowList) throws IOException, InterruptedException {
-        Table tbl = this.hConn.getTable(tal);
+        LOG.debug("Prepare Flush {} rows", rowList.size());
+        if (rowList.size() == 0) {
+            return;
+        }
 
+        Table tbl = null;
         try {
-            LOG.debug("Flush {} rows", rowList.size());
+            tbl = this.hConn.getTable(tal);
             tbl.batch(rowList, new Object[rowList.size()]);
         } finally {
-            tbl.close();
+            if (tbl != null) {
+                tbl.close();
+            }
         }
+        LOG.info("{} rows flushed", rowList.size());
     }
 
     private void showException(Exception e) {
