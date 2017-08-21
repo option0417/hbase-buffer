@@ -4,7 +4,7 @@
 
     <groupId>tw.com.wd.hbase.util</groupId>
     <artifactId>hbase-buffer</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <!-- Change Log:
         1.0.0-SNAPSHOT (2017/08/09):
@@ -16,6 +16,8 @@
             2. Add slf4j dependence and logback.xml for configuration
         1.0.3-SNAPSHOT (2017/08/14):
             1. Support setup HBaseBuffer via configuration file
+        1.0.3.1-SNAPSHOT (2017/08/17):
+            1. A little refactor
     -->
 
     <properties>
