@@ -1,4 +1,4 @@
-package tw.com.wd.hbasebuffer;
+package tw.com.wd.hbase.util.hbasebuffer;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;

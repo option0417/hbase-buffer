@@ -1,7 +1,6 @@
-package tw.com.wd.hbasebuffer.util;
+package tw.com.wd.hbase.util.hbasebuffer.util;
 
-import org.junit.Test;
-import tw.com.wd.hbasebuffer.HBaseBufferConf;
+import tw.com.wd.hbase.util.hbasebuffer.HBaseBufferConf;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,7 +9,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 public class HBaseBufferConfFileTest {
-    @Test
     public void testValueFromFile() throws Exception {
         String rootPath = System.getProperty("user.dir");
         File confDir    = new File(rootPath + File.separator + "conf");

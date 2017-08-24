@@ -1,8 +1,8 @@
-package tw.com.wd.hbasebuffer;
+package tw.com.wd.hbase.util.hbasebuffer;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Row;
-import tw.com.wd.hbasebuffer.exception.HBufferException;
+import tw.com.wd.hbase.util.hbasebuffer.exception.HBufferException;
 
 public interface IHBaseBuffer {
     /**
