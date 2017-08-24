@@ -1,6 +1,7 @@
-package tw.com.wd.hbase.util;
+package tw.com.wd.hbasebuffer.util;
 
 import org.junit.Test;
+import tw.com.wd.hbasebuffer.HBaseBufferConf;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,14 +21,14 @@ public class HBaseBufferConfFileTest {
 
         FileOutputStream fos = new FileOutputStream(confFile);
         fos.write("BUFFER_SIZE = 3333\n".getBytes());
-        fos.write("OFFER_TIMEOUT = 2222\n".getBytes());
+        fos.write("OFFER_TIMEOUT = 100\n".getBytes());
         fos.close();
 
         int bufferSize      = HBaseBufferConf.getBufferSize();
         long offerTimeout   = HBaseBufferConf.getOfferTimeout();
 
         assertThat(bufferSize, is(3333));
-        assertThat(offerTimeout, is(2222l));
+        assertThat(offerTimeout, is(100l));
 
         confFile.delete();
         confDir.delete();
