@@ -1,4 +1,4 @@
-package tw.com.wd.hbasebuffer.obj;
+package tw.com.wd.hbase.util.hbasebuffer.obj;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Row;

@@ -1,4 +1,4 @@
-package tw.com.wd.hbasebuffer.impl;
+package tw.com.wd.hbase.util.hbasebuffer.impl;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -7,7 +7,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.junit.*;
-import tw.com.wd.hbasebuffer.IHBaseBuffer;
+import tw.com.wd.hbase.util.hbasebuffer.IHBaseBuffer;
 
 import java.io.IOException;
 import java.util.ArrayList;

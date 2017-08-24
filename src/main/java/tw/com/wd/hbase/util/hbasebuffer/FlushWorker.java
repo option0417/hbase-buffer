@@ -1,4 +1,4 @@
-package tw.com.wd.hbasebuffer;
+package tw.com.wd.hbase.util.hbasebuffer;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
@@ -6,7 +6,7 @@ import org.apache.hadoop.hbase.client.Row;
 import org.apache.hadoop.hbase.client.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tw.com.wd.hbasebuffer.obj.HBaseBufferItem;
+import tw.com.wd.hbase.util.hbasebuffer.obj.HBaseBufferItem;
 
 import java.util.*;
 import java.util.concurrent.Callable;

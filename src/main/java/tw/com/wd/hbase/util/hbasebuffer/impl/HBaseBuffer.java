@@ -1,16 +1,16 @@
-package tw.com.wd.hbasebuffer.impl;
+package tw.com.wd.hbase.util.hbasebuffer.impl;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tw.com.wd.hbasebuffer.BufferThreadPool;
-import tw.com.wd.hbasebuffer.FlushWorker;
-import tw.com.wd.hbasebuffer.HBaseBufferConf;
-import tw.com.wd.hbasebuffer.IHBaseBuffer;
-import tw.com.wd.hbasebuffer.exception.HBufferException;
-import tw.com.wd.hbasebuffer.obj.HBaseBufferItem;
+import tw.com.wd.hbase.util.hbasebuffer.BufferThreadPool;
+import tw.com.wd.hbase.util.hbasebuffer.FlushWorker;
+import tw.com.wd.hbase.util.hbasebuffer.HBaseBufferConf;
+import tw.com.wd.hbase.util.hbasebuffer.IHBaseBuffer;
+import tw.com.wd.hbase.util.hbasebuffer.exception.HBufferException;
+import tw.com.wd.hbase.util.hbasebuffer.obj.HBaseBufferItem;
 
 import java.util.ArrayList;
 import java.util.List;
