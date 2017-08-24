@@ -1,6 +1,7 @@
-package tw.com.wd.hbase.util;
+package tw.com.wd.hbasebuffer.util;
 
 import org.junit.Test;
+import tw.com.wd.hbasebuffer.HBaseBufferConf;
 
 import java.io.File;
 import java.io.FileOutputStream;

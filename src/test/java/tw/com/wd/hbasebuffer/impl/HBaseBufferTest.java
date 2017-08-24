@@ -1,4 +1,4 @@
-package tw.com.wd.hbase.util.impl;
+package tw.com.wd.hbasebuffer.impl;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -7,7 +7,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.junit.*;
-import tw.com.wd.hbase.util.IHBaseBuffer;
+import tw.com.wd.hbasebuffer.IHBaseBuffer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,8 +32,8 @@ public class HBaseBufferTest {
     private static ExecutorService hConnPool                    = null;
     private static final String HBASE_ENV_KEY_ZOOKEEPER_QUORUM  = "hbase.zookeeper.quorum";
     private static final String HBASE_ENV_ROOT_DIR              = "hbase.root.dir";
-    private static final int WORKER_SIZE                        = 1000;
-    private static final int PUT_COUNT                          = 100;
+    private static final int WORKER_SIZE                        = 100;
+    private static final int PUT_COUNT                          = 500;
     private static final TableName TBL1                         = TableName.valueOf("testBuffer1");
     private static final TableName TBL2                         = TableName.valueOf("testBuffer2");
     private static final TableName TBL3                         = TableName.valueOf("testBuffer3");
@@ -57,7 +57,7 @@ public class HBaseBufferTest {
 
         conf = new Configuration();
         conf.set(HBASE_ENV_KEY_ZOOKEEPER_QUORUM, "nqmi11");
-        conf.set(HBASE_ENV_ROOT_DIR, "hdfs://nqmi11:8020/hbase");
+        conf.set(HBASE_ENV_ROOT_DIR, "hdfs://nqmi11:8020/hbasebuffer");
         hConn = ConnectionFactory.createConnection(conf, hConnPool);
 
         Admin admin = hConn.getAdmin();
@@ -142,7 +142,6 @@ public class HBaseBufferTest {
         long startime           = System.currentTimeMillis();
 
         try {
-
             for (int cnt = 0; cnt < WORKER_SIZE; cnt++) {
                 futureList.add(workerPool.submit(new PutWorker(cnt, TBL1, hbaseBuffer, PUT_COUNT)));
             }
@@ -168,6 +167,7 @@ public class HBaseBufferTest {
         for (Future<Boolean> f : futureList) {
             assertThat(f.get(), is(Boolean.TRUE));
         }
+        Thread.sleep(500l);
         assertThat(checkRecordCount(TBL1, WORKER_SIZE * PUT_COUNT), is(Boolean.TRUE));
     }
 
@@ -218,7 +218,7 @@ public class HBaseBufferTest {
         for (Future<Boolean> f : futureList) {
             assertThat(f.get(), is(Boolean.TRUE));
         }
-
+        Thread.sleep(500l);
         assertThat(checkRecordCount(TBL1, tbl1Cnt * PUT_COUNT), is(Boolean.TRUE));
         assertThat(checkRecordCount(TBL2, tbl2Cnt * PUT_COUNT), is(Boolean.TRUE));
         assertThat(checkRecordCount(TBL3, tbl3Cnt * PUT_COUNT), is(Boolean.TRUE));
@@ -270,8 +270,13 @@ public class HBaseBufferTest {
             for (int cnt = 0; cnt < putCount; cnt++) {
                 Put put = new Put((id + "_" + cnt).getBytes());
                 put.addColumn("cf".getBytes(), "cq".getBytes(), (id + "_" + cnt).getBytes());
-                if(!this.hbaseBuffer.put(put, tbl)) {
-                    flag = false;
+
+                try {
+                    if (!this.hbaseBuffer.put(put, tbl)) {
+                        flag = false;
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
                 }
             }
             return flag;

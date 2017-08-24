@@ -1,4 +1,4 @@
-package tw.com.wd.hbase.util;
+package tw.com.wd.hbasebuffer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,7 +18,7 @@ public class HBaseBufferConf {
 
     private static void initDefaultValue() {
         HBaseBufferConf.BUFFER_SIZE     = 10000;
-        HBaseBufferConf.OFFER_TIMEOUT   = 300l;
+        HBaseBufferConf.OFFER_TIMEOUT   = 500l;
     }
 
     private static void readFromSystem() {
