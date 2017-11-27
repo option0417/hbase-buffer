@@ -8,6 +8,7 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
 import org.junit.*;
 import tw.com.wd.hbase.util.hbasebuffer.IHBaseBuffer;
+import tw.com.wd.hbase.util.hbasebuffer.util.ObjectUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -110,7 +111,9 @@ public class HBaseBufferTest {
 
     @Before
     public void preTest() throws IOException {
-        hbaseBuffer = new HBaseBuffer(hConn);
+        hbaseBuffer = HBaseBuffer.getInstance();
+        ObjectUtils.injectObject(hbaseBuffer, hConn);
+
         workerPool = Executors.newFixedThreadPool(WORKER_SIZE);
         futureList = new ArrayList<Future<Boolean>>(WORKER_SIZE);
     }
@@ -155,9 +158,8 @@ public class HBaseBufferTest {
                     }
                 }
             }
-            hbaseBuffer.flush();
             long endtime = System.currentTimeMillis();
-            System.out.printf("%d Worker do %d put and done in %d millitime\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
+            System.out.printf("%d Worker do %d put and done in %d millisecond\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
         } catch (Exception e) {
             rtnException = e;
             e.printStackTrace();

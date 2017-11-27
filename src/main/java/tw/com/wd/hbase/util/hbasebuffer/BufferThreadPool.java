@@ -3,9 +3,8 @@ package tw.com.wd.hbase.util.hbasebuffer;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BufferThreadPool {
+public class BufferThreadPool implements IShutdownable {
     private ThreadPoolExecutor bufferPoolExecutor;
-
 
     private static final class InstanceHolder {
         private static final BufferThreadPool INSTANCE = new BufferThreadPool();
@@ -22,6 +21,8 @@ public class BufferThreadPool {
                 new ArrayBlockingQueue<Runnable>((core << 6) + (core << 5) + (core << 2)),
                 new BufferThreadFactory(),
                 new BufferRejectedExecutionHandler());
+
+        BufferShutdownHook.getInstance().addShutdownable(this);
     }
 
     public static final BufferThreadPool getInstance() {
@@ -30,6 +31,12 @@ public class BufferThreadPool {
 
     public void submit(Callable task) {
         bufferPoolExecutor.submit(task);
+    }
+
+    public void shutdown() {
+        if (bufferPoolExecutor != null && !bufferPoolExecutor.isShutdown()) {
+            bufferPoolExecutor.shutdown();
+        }
     }
 
     private class BufferThreadFactory implements ThreadFactory {

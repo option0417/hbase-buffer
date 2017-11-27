@@ -7,8 +7,10 @@ import java.util.Properties;
 
 public class HBaseBufferConf {
     private static final String CONF_FILE = "conf/hbuffer.conf";
-    private static int BUFFER_SIZE;     // Size of HBaseBuffer
-    private static long OFFER_TIMEOUT;  // Timeout for offer to queue in millisecond
+    private static int BUFFER_SIZE;         // Size of HBaseBuffer
+    private static long OFFER_TIMEOUT;      // Timeout for offer to queue in millisecond
+    private static String ZOOKEEPER_QUORUM; // Quorum of Zookeeper
+    private static String HBASE_ROOT_DIR;   // HDFS path for root of HBase
 
     static {
         initDefaultValue();
@@ -85,5 +87,13 @@ public class HBaseBufferConf {
 
     public static long getOfferTimeout() {
         return OFFER_TIMEOUT;
+    }
+
+    public static String getZookeeperQuorum() {
+        return ZOOKEEPER_QUORUM;
+    }
+
+    public static String getHBaseRootDir() {
+        return HBASE_ROOT_DIR;
     }
 }

@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Row;
 import tw.com.wd.hbase.util.hbasebuffer.exception.HBufferException;
 
-public interface IHBaseBuffer {
+public interface IHBaseBuffer extends IShutdownable {
     /**
      * Put Row operation (ex. Put, Get, Append, Increment, etc.) to HBaseBuffer
      * @param hbaseOP Row
@@ -19,4 +19,10 @@ public interface IHBaseBuffer {
      * @throws HBufferException
      */
     public void flush() throws HBufferException;
+
+    /**
+     * Get size of buffer
+     * @throws HBufferException
+     */
+    public int size();
 }
