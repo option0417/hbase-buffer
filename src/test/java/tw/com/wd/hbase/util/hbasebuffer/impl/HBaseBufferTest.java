@@ -11,6 +11,7 @@ import tw.com.wd.hbase.util.hbasebuffer.IHBaseBuffer;
 import tw.com.wd.hbase.util.hbasebuffer.util.ObjectUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -169,11 +170,9 @@ public class HBaseBufferTest {
         for (Future<Boolean> f : futureList) {
             assertThat(f.get(), is(Boolean.TRUE));
         }
-        Thread.sleep(500l);
-        assertThat(checkRecordCount(TBL1, WORKER_SIZE * PUT_COUNT), is(Boolean.TRUE));
+        Thread.sleep(1000l);
+        assertThat(checkRecordCount(TBL1), is(WORKER_SIZE * PUT_COUNT));
     }
-
-
 
     @Test
     public void testPutMultiTable() throws Exception {
@@ -206,7 +205,6 @@ public class HBaseBufferTest {
                     }
                 }
             }
-            hbaseBuffer.flush();
             long endtime = System.currentTimeMillis();
             System.out.printf("%d Worker do %d put and done in %d millitime\n", WORKER_SIZE, PUT_COUNT, endtime - startime);
         } catch (Exception e) {
@@ -220,13 +218,37 @@ public class HBaseBufferTest {
         for (Future<Boolean> f : futureList) {
             assertThat(f.get(), is(Boolean.TRUE));
         }
-        Thread.sleep(500l);
-        assertThat(checkRecordCount(TBL1, tbl1Cnt * PUT_COUNT), is(Boolean.TRUE));
-        assertThat(checkRecordCount(TBL2, tbl2Cnt * PUT_COUNT), is(Boolean.TRUE));
-        assertThat(checkRecordCount(TBL3, tbl3Cnt * PUT_COUNT), is(Boolean.TRUE));
+        Thread.sleep(1000l);
+        assertThat(checkRecordCount(TBL1), is(tbl1Cnt * PUT_COUNT));
+        assertThat(checkRecordCount(TBL2), is(tbl2Cnt * PUT_COUNT));
+        assertThat(checkRecordCount(TBL3), is(tbl3Cnt * PUT_COUNT));
     }
 
-    private boolean checkRecordCount(TableName tbl, int exceptCount) throws IOException {
+    @Test
+    public void testWithReflection() throws Exception {
+        Exception rtnException  = null;
+        try {
+            Class<?> hbufferClazz   = Class.forName("tw.com.wd.hbase.util.hbasebuffer.impl.HBaseBuffer");
+            Method getInstanceMethod    = hbufferClazz.getDeclaredMethod("getInstance");
+
+            Object hbufferInstance = getInstanceMethod.invoke(null);
+
+            Method putMethod = hbufferClazz.getDeclaredMethod("put", Row.class, TableName.class);
+
+
+            Put put = new Put("put_with_reflection".getBytes());
+            put.addColumn("cf".getBytes(), "cq".getBytes(), "put_with_reflection".getBytes());
+            putMethod.invoke(hbufferInstance, put, TBL1);
+        } catch (Exception e) {
+            rtnException = e;
+            e.printStackTrace();
+        }
+        Thread.sleep(1000l);
+        assertThat(rtnException, is(nullValue()));
+        assertThat(checkRecordCount(TBL1), is(1));
+    }
+
+    private int checkRecordCount(TableName tbl) throws IOException {
         int currCount   = 0;
         Table htbl      = null;
 
@@ -237,7 +259,6 @@ public class HBaseBufferTest {
             scan.setFilter(
                     new FirstKeyOnlyFilter()
             );
-            scan.setCaching(exceptCount / 10);
 
             ResultScanner resultScanner = htbl.getScanner(scan);
             Iterator<Result> iter       = resultScanner.iterator();
@@ -245,7 +266,7 @@ public class HBaseBufferTest {
                 iter.next();
                 currCount++;
             }
-            return currCount == exceptCount;
+            return currCount;
         } finally {
             if (htbl != null) {
                 htbl.close();
