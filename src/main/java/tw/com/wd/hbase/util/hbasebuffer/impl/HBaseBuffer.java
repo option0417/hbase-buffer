@@ -46,6 +46,7 @@ public class HBaseBuffer implements IHBaseBuffer {
         super();
         initial();
         startHBaseBuffer();
+        LOG.info("HBaseBuffer Started");
     }
 
     private void initial() {
